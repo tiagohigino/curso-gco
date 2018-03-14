@@ -10,24 +10,25 @@ services:
     networks:
       - webnet
 
-  jenkins:
-    build: ./ambiente/jenkins/
-    ports:
-      - "8082:8082"
-    networks:
-      - webnet
-    links:
-      - nexus
-    environment:
-      JENKINS_OPTS: --httpPort=8082 -Djenkins.install.runSetupWizard=false
-    volumes_from:
-      - store
+#  jenkins:
+#    build: ./ambiente/jenkins/
+#    ports:
+#      - "8082:8082"
+#    networks:
+#      - webnet
+#    links:
+#      - nexus
+#    environment:
+#      JENKINS_OPTS: --httpPort=8082 -Djenkins.install.runSetupWizard=false
+#    volumes:
+#      - jenkins-data:/var/jenkins_home
+
 
   java:
     build: ./ambiente/java/
     command: "true"
-    volumes_from:
-      - store
+    volumes:
+      - .:/app
     working_dir:
       "/app"
 
@@ -46,8 +47,9 @@ services:
       - sonar
     networks:
       - webnet
-    volumes_from:
-      - store
+    volumes:
+      - "./.m2:/root/.m2"
+      - ".:/usr/src/mymaven"
     working_dir:
        /usr/src/mymaven
 
@@ -62,8 +64,8 @@ services:
       NEXUS_DATA: /nexus-data
       NEXUS_CONTEXT: /
       INSTALL4J_ADD_VM_PARAMS: -Xms1200m -Xmx1200m -XX:MaxDirectMemorySize=2g -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs
-    volumes_from:
-      - store
+    volumes:
+      - ".data/nexus:${NEXUS_DATA}"
 
   db:
     build: ./ambiente/mysql/
@@ -80,16 +82,13 @@ services:
     working_dir:
       "/app/db"
 
-  store:
-    image: alpine
-    networks:
-      - webnet
-    volumes:
-      - nexus-data:${NEXUS_DATA}
-      - jenkins-data:/var/jenkins_home
-      - maven-data:/root/.m2
-      - app:/usr/src/mymaven
-      - app:/app # java
+#  store:
+#    image: alpine
+#    networks:
+#      - webnet
+#    volumes:
+#     - nexus-data:${NEXUS_DATA}
+#     - jenkins-data:/var/jenkins_home
 
   sonar:
     build: ./ambiente/sonar/
@@ -107,22 +106,18 @@ volumes:
   jenkins-data:
     driver_opts:
       type: none
-      device: ${PWD}/.data/jenkins
+      device: .data/jenkins
       o: bind
   nexus-data:
     driver_opts:
       type: none
-      device: ${PWD}/.data/nexus
+      device: .data/nexus
       o: bind
   maven-data:
     driver_opts:
       type: none
-      device: ${PWD}/.data/maven
+      device: ./.data/maven
       o: bind
-  app:
-    driver_opts:
-      type: none
-      device: ${PWD}
-      o: bind
+
 
 
